@@ -179,6 +179,13 @@ Formsy.Form = React.createClass({
   // all inputs by checking the name prop. Maybe do a better
   // check here
   traverseChildrenAndRegisterInputs: function (children) {
+    var attachToForm = this.attachToForm
+    if(this.props._attachToForm) {
+        attachToForm = this.props._attachToForm
+    }
+    if(this.props.myAttachToForm) {
+        attachToForm = this.props.myAttachToForm
+    }
 
     if (typeof children !== 'object' || children === null) {
       return children;
@@ -192,7 +199,7 @@ Formsy.Form = React.createClass({
       if (child.props && child.props.name) {
 
         return React.cloneElement(child, {
-          _attachToForm: this.attachToForm,
+          _attachToForm: attachToForm,
           _detachFromForm: this.detachFromForm,
           _validate: this.validate,
           _isFormDisabled: this.isFormDisabled,
@@ -209,6 +216,9 @@ Formsy.Form = React.createClass({
   },
 
   isFormDisabled: function () {
+    if (this.props._isFormDisabled) {
+      return this.props._isFormDisabled();
+    }
     return this.props.disabled;
   },
 
@@ -243,6 +253,9 @@ Formsy.Form = React.createClass({
   // validate the input and set its state. Then check the
   // state of the form itself
   validate: function (component) {
+    if (this.props._validate) {
+      return this.props._validate(component);
+    }
 
     // Trigger onChange
     if (this.state.canChange) {
@@ -422,6 +435,10 @@ Formsy.Form = React.createClass({
   // Method put on each input component to register
   // itself to the form
   attachToForm: function (component) {
+    if (this.props._attachToForm) {
+      return this.props._attachToForm(component);
+    }
+
     this.inputs[component.props.name] = component;
     this.model[component.props.name] = component.state._value;
     this.validate(component);
@@ -430,16 +447,33 @@ Formsy.Form = React.createClass({
   // Method put on each input component to unregister
   // itself from the form
   detachFromForm: function (component) {
+     if (this.props._detachFromForm) {
+      return this.props._detachFromForm(component);
+    }
+
     delete this.inputs[component.props.name];
     delete this.model[component.props.name];
   },
   render: function () {
+    var elFn, props;
 
-    return React.DOM.form({
+    if (this.props.extended) {
+      elFn = React.DOM.div;
+      props = {
+        className: this.props.className
+      };
+    } else {
+      elFn = React.DOM.form;
+      props = {
         onSubmit: this.submit,
         className: this.props.className,
         autoComplete: this.props.autoComplete
-      },
+      };
+    }
+
+
+    return elFn(
+      props,
       this.traverseChildrenAndRegisterInputs(this.props.children)
     );
 
